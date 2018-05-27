@@ -25,12 +25,20 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Tile : MonoBehaviour {
+    public static Tile      instance;
+    public bool             wasSwapped = false;
+
 	private static Color    selectedColor = new Color(.5f, .5f, .5f, 1.0f);
 	private static Tile     previousSelected = null;
 	private SpriteRenderer  render;
-	private bool            isSelected = false;
-	private Vector2[]       adjacentDirections = new Vector2[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
-    private bool            matchFound = false;
+	private bool            isSelected = false;	
+    private bool            matchFound = false;    
+
+    private Vector2[] adjacentDirections = new Vector2[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+
+    void Start() {
+        instance = GetComponent<Tile>();
+    }
 
 	void Awake() {
 		render = GetComponent<SpriteRenderer>();
@@ -73,7 +81,7 @@ public class Tile : MonoBehaviour {
             {   // ...and surrounding tiles .Contains previousSelected tile
                 // then swap tiles
                 // and .ClearAllMatches if there are any
-                if(GetAllAdjacentTiles().Contains(previousSelected.gameObject))
+                if(GetAllAdjacentTiles(this.GetComponent<Transform>()).Contains(previousSelected.gameObject))
                 {                    
                     SwapSprite(previousSelected.render);
                     previousSelected.ClearAllMatchess();
@@ -104,12 +112,13 @@ public class Tile : MonoBehaviour {
         render.sprite = tempSprite;
         SFXManager.instance.PlaySFX(Clip.Swap);
         GUIManager.instance.MoveCounter--;
+        Tile.instance.wasSwapped = true;
     }
 
     // Method for retrieving single adjacent tile
-    private GameObject GetAdjacent(Vector2 castDir)
+    private GameObject GetAdjacent(Transform tileTrans, Vector2 castDir)
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, castDir);
+        RaycastHit2D hit = Physics2D.Raycast(tileTrans.position, castDir);
 
         if (hit.collider != null)
         {            
@@ -119,12 +128,12 @@ public class Tile : MonoBehaviour {
     }
 
     // Method for retrieving a list of tiles surrounding the current tile
-    private List<GameObject> GetAllAdjacentTiles()
+    public List<GameObject> GetAllAdjacentTiles(Transform tileTrans)
     {
         List<GameObject> adjacentTiles = new List<GameObject>();
         for (int i = 0; i < adjacentDirections.Length; i++)
         {
-            adjacentTiles.Add(GetAdjacent(adjacentDirections[i]));            
+            adjacentTiles.Add(GetAdjacent(tileTrans, adjacentDirections[i]));            
         }        
         return adjacentTiles;
         
@@ -187,7 +196,7 @@ public class Tile : MonoBehaviour {
             matchFound = false;
             // Stop Coroutine if it was already runing 
             // and start it again
-            StopCoroutine(BoardManager.instance.FindNullTiles());  // <<<<????? зачем ее останавливать          
+            StopCoroutine(BoardManager.instance.FindNullTiles());   
             // Shifting and re-filling
             StartCoroutine(BoardManager.instance.FindNullTiles()); 
             SFXManager.instance.PlaySFX(Clip.Clear);
