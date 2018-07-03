@@ -51,15 +51,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ea22b4f928d1e94a9dd200a4e23b9be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characters:
-  - {fileID: 21300000, guid: 2f64e72968bcc654cbb495f5c4782201, type: 3}
-  - {fileID: 21300000, guid: 6545b04b36c7e754d920412159533f41, type: 3}
-  - {fileID: 21300000, guid: fd853d24621c1664d890871400c336cb, type: 3}
-  - {fileID: 21300000, guid: df459ddd1ff057247aa1e0a8556d24b3, type: 3}
-  - {fileID: 21300000, guid: 588a9b3ce4ab9c8408f5882a4af06ca8, type: 3}
-  - {fileID: 21300000, guid: 8dedca852e516644497eb0d9c23bb94c, type: 3}
-  - {fileID: 21300000, guid: dc960483151b0f349a0de0a4f27e7a73, type: 3}
   tile: {fileID: 1616524516669470, guid: 12bb5ff428fd8f745b9493042954e09d, type: 2}
   xSize: 8
   ySize: 12
   shiftDelay: 0.1
+  wasShifted: 0
+  chanceForNewSpecialTile: 0.04
+  characters:
+  - {fileID: 21300000, guid: 6545b04b36c7e754d920412159533f41, type: 3}
+  - {fileID: 21300000, guid: df459ddd1ff057247aa1e0a8556d24b3, type: 3}
+  - {fileID: 21300000, guid: 8dedca852e516644497eb0d9c23bb94c, type: 3}
+  - {fileID: 21300000, guid: 2f64e72968bcc654cbb495f5c4782201, type: 3}
+  - {fileID: 21300000, guid: fd853d24621c1664d890871400c336cb, type: 3}
+  - {fileID: 21300000, guid: 588a9b3ce4ab9c8408f5882a4af06ca8, type: 3}
+  - {fileID: 21300000, guid: dc960483151b0f349a0de0a4f27e7a73, type: 3}
+  specialTiles:
+  - {fileID: 21300000, guid: 275925b869e56634cbbb6a9e19ed41b6, type: 3}
+  - {fileID: 21300000, guid: 7fb303f7e7107ea4ba4fb6e2ea3f3b12, type: 3}
+  - {fileID: 21300000, guid: e57ec3bd2e350c14f91202036931cade, type: 3}
+  - {fileID: 21300000, guid: dbff40ecf521e824dbf82114e1158b06, type: 3}
+  - {fileID: 21300000, guid: 5b624a3b99f14ce45aef1321195c134e, type: 3}
+  specialTilesChances:
+  - 1.8
+  - 0.3
+  - 0.6
+  - 0.9
+  - 1.3

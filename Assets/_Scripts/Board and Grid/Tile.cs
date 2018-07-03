@@ -23,18 +23,21 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Tile : MonoBehaviour {
     public static Tile      instance;
     public bool             wasSwapped = false;
-
+    public int              x = 0, y = 0; // coordinates of the tile[x, y] on the Board   
+    public bool             freezeTile = false;
+    
 	private static Color    selectedColor = new Color(.5f, .5f, .5f, 1.0f);
 	private static Tile     previousSelected = null;
 	private SpriteRenderer  render;
 	private bool            isSelected = false;	
     private bool            matchFound = false;    
 
-    private Vector2[] adjacentDirections = new Vector2[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+    private Vector2[]       adjacentDirections = new Vector2[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
 
     void Start() {
         instance = GetComponent<Tile>();
@@ -60,8 +63,8 @@ public class Tile : MonoBehaviour {
     // Tile selecting
     void OnMouseDown()
     {
-        // Don't select tile when it's empty or when the game ends
-        if (render.sprite == null || BoardManager.instance.IsShifting)
+        // Don't select tile when it's empty or when the game ends or when Tile is freezed
+        if (render.sprite == null || BoardManager.instance.IsShifting || freezeTile)
         {
             return;
         }
@@ -111,7 +114,9 @@ public class Tile : MonoBehaviour {
         render2.sprite = render.sprite;
         render.sprite = tempSprite;
         SFXManager.instance.PlaySFX(Clip.Swap);
-        GUIManager.instance.MoveCounter--;
+        if (!BoardManager.moveFreeze) {
+            GUIManager.instance.MoveCounter--;   
+        }       
         Tile.instance.wasSwapped = true;
     }
 
@@ -161,7 +166,7 @@ public class Tile : MonoBehaviour {
 
     // Method finds all the matching tiles along the given paths,
     // and then clears the matches respectively
-    private void ClearMatch(Vector2[] paths)
+    public void ClearMatch(Vector2[] paths)
     {
         List<GameObject> matchingTiles = new List<GameObject>();
 
@@ -171,9 +176,68 @@ public class Tile : MonoBehaviour {
             matchingTiles.AddRange(FindMatch(paths[i]));
         }
 
+        matchingTiles.Add(this.gameObject);
+
         // ...clears
-        if (matchingTiles.Count >= 2) // Third match is the initial tile
-        {
+        if (matchingTiles.Count >= 3)
+        {   /*
+            Debug.Log("Before Sort:");
+            Debug.Log("[X, Y]");
+            for (int i = 0; i < matchingTiles.Count; i++) {
+                Debug.Log("matchingTiles[" + i + "]" + " - [" + matchingTiles[i].GetComponent<Tile>().x + "," + matchingTiles[i].GetComponent<Tile>().y + "]" + "-" + matchingTiles[i].GetComponent<SpriteRenderer>().sprite.name);                
+            }            
+            Debug.Log("///////////////////////////////////////////////////");      
+             */
+
+            matchingTiles.Sort(delegate(GameObject GO1, GameObject GO2) {
+                Tile    tile1, 
+                        tile2;
+                tile1 = GO1.GetComponent<Tile>();
+                tile2 = GO2.GetComponent<Tile>();
+               
+                if (tile1.x==0 && tile2.x==0) {
+                    return (tile1.y).CompareTo(tile2.y);
+                }
+
+                if (tile1.y == 0 && tile2.y == 0) {
+                    return (tile1.x).CompareTo(tile2.x);
+                }
+                
+                return (tile1.x * tile1.y).CompareTo(tile2.x * tile2.y);
+            });
+            /*
+            Debug.Log("After Sort:");
+            Debug.Log("[X, Y]");
+            for (int i = 0; i < matchingTiles.Count; i++) {
+                Debug.Log("matchingTiles[" + i + "]" + " - [" + matchingTiles[i].GetComponent<Tile>().x + "," + matchingTiles[i].GetComponent<Tile>().y + "]" + "-" + matchingTiles[i].GetComponent<SpriteRenderer>().sprite.name);
+            }
+            Debug.Log("///////////////////////////////////////////////////");
+             */
+           
+            GameObject  beforeFirst = GetAdjacent(matchingTiles[0].transform, paths[0]),
+                        afterLast = GetAdjacent(matchingTiles[matchingTiles.Count-1].transform, paths[1]);
+            string      beforeFirstName = null,
+                        afterLastName = null;
+            if (afterLast) {
+                afterLastName = afterLast.GetComponent<SpriteRenderer>().sprite.name;
+            }
+
+            if (beforeFirst) {
+                beforeFirstName = beforeFirst.GetComponent<SpriteRenderer>().sprite.name;
+            }
+
+            if (beforeFirstName != null) {
+                if (beforeFirstName.Trim().StartsWith("SPEC")) {
+                    BoardManager.instance.ChooseEvent(beforeFirst);
+                }    
+            }
+
+            if (afterLastName != null) {
+                if (afterLastName.Trim().StartsWith("SPEC")) {
+                    BoardManager.instance.ChooseEvent(afterLast);
+                }
+            }                         
+                                    
             for (int i = 0; i < matchingTiles.Count; i++)
             {
                 matchingTiles[i].GetComponent<SpriteRenderer>().sprite = null;
@@ -184,11 +248,11 @@ public class Tile : MonoBehaviour {
 
     public void ClearAllMatchess()
     {
-        if (render.sprite == null)
+        if (render.sprite == null || render.sprite.name.Trim().StartsWith("SPEC"))
             return;
 
         ClearMatch(new Vector2[2] {Vector2.left, Vector2.right});   // horizontal
-        ClearMatch(new Vector2[2] {Vector2.up, Vector2.down});      // vertical
+        ClearMatch(new Vector2[2] {Vector2.down, Vector2.up});      // vertical
 
         if (matchFound)
         {

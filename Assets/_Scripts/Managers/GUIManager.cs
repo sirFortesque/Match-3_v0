@@ -25,16 +25,16 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class GUIManager : MonoBehaviour {
-    public static GUIManager    instance; // Singleton pattern
-	public GameObject           gameOverPanel;
-	public Text                 yourScoreTxt;
-	public Text                 highScoreTxt;
-	public Text                 scoreTxt;
-	public Text                 moveCounterTxt;
-
-	private int                 score;
-    public int                 moveCounter;
-
+    public  static GUIManager   instance; // Singleton pattern
+	public  GameObject          gameOverPanel;
+	public  Text                yourScoreTxt;
+	public  Text                highScoreTxt;
+	public  Text                scoreTxt;
+	public  Text                moveCounterTxt;
+    public  int                 moveCounter;
+	
+    private int                 score;
+    
     public int Score {
         get {
             return score;
@@ -61,8 +61,7 @@ public class GUIManager : MonoBehaviour {
         }
     }
 
-	void Awake() {
-	   // moveCounter = 60;
+	void Awake() {	   
 	    moveCounterTxt.text = moveCounter.ToString();
 		instance = GetComponent<GUIManager>();
 	}
