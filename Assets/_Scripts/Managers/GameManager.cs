@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,29 +34,55 @@ public class GameManager : MonoBehaviour {
 	public Image                faderImg;
 	public bool                 gameOver = false;
 	public float                fadeSpeed = .02f;
+    public Text                 menuHighScoreTxt; // Used only in the "Menu" scene.
+    public int                  levelNumber;
+    public int                  startGoal = 1500;
+    public int                  goal;
+
+    public GameObject[]         ruleSheets = new GameObject [4];
 
 	private Color               fadeTransparency = new Color(0, 0, 0, .04f);
 	private string              currentScene;
 	private AsyncOperation      async;
+    
 
-	void Awake() {
-		// Only 1 Game Manager can exist at a time
-		if (instance == null) {
-			DontDestroyOnLoad(gameObject);
-			instance = GetComponent<GameManager>();
-			SceneManager.sceneLoaded += OnLevelFinishedLoading;
-		} else {
-			Destroy(gameObject);
-		}
-	}
+    void Awake() {
+        // Only 1 Game Manager can exist at a time
+        if (instance == null) {
+            DontDestroyOnLoad(gameObject);
+            instance = GetComponent<GameManager>();
+            SceneManager.sceneLoaded += OnLevelFinishedLoading;
+            levelNumber = 0;
+            goal = 0;
+        }
+        else {
+            Destroy(gameObject);
+        }
+
+        if (menuHighScoreTxt && PlayerPrefs.HasKey("HighScore")) {
+            menuHighScoreTxt.text = "HighScore: " + PlayerPrefs.GetInt("HighScore").ToString() + "!";
+        }                
+    }
 
     private void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
         currentScene = scene.name;
+
+        // increasing level difficulty
+        if (CurrentSceneName == "Game") {            
+            levelNumber++;
+            goal = startGoal * levelNumber;
+            GUIManager.instance.MoveCounter -= 5 * levelNumber;
+                        
+            Debug.Log("level - " + levelNumber);            
+            Debug.Log("goal - " + goal);         
+            Debug.Log("GUIManager.instance.MoveCounter - " + GUIManager.instance.moveCounter);
+        }        
+
         instance.StartCoroutine(FadeIn(instance.faderObj, instance.faderImg));
     }
 
     // Iterate the fader transparency to 0%
-    IEnumerator FadeIn(GameObject faderObject, Image fader) {
+    public IEnumerator FadeIn(GameObject faderObject, Image fader) {
         while (fader.color.a > 0) {
             fader.color -= fadeTransparency;
             yield return new WaitForSeconds(fadeSpeed);
@@ -74,14 +102,8 @@ public class GameManager : MonoBehaviour {
 
     // Allows the scene to change once it is loaded
     public void ActivateScene() {
-        async.allowSceneActivation = true;
+        async.allowSceneActivation = true;                
     }
-
-	void Update() {
-		if (Input.GetKeyDown(KeyCode.Escape)) {
-			ReturnToMenu();
-		}
-	}
 
     private bool isReturning = false;
     public void ReturnToMenu() {
@@ -90,8 +112,11 @@ public class GameManager : MonoBehaviour {
         }
 
         if (CurrentSceneName != "Menu") {
-            StopAllCoroutines();
+            Time.timeScale = 1;
+            StopAllCoroutines();            
             LoadScene("Menu");
+            GameManager.instance.levelNumber = 0;
+            GameManager.instance.goal = 0;            
             isReturning = true;
         }
     }
@@ -135,4 +160,25 @@ public class GameManager : MonoBehaviour {
 			UnityEditor.EditorApplication.isPlaying = false;
 		#endif
 	}
+
+    public void RulesButton(bool prevORnext) { // prev = false; next = true
+        // Find which sheet is active now
+        int index = 0;
+        for (int i = 0; i < GameManager.instance.ruleSheets.Length; i++) {
+            if (GameManager.instance.ruleSheets[i].activeSelf) {
+                index = i;
+                //Debug.Log(">>> i = " + i + " index = " + index);
+                break;
+            }
+        }
+
+        if (prevORnext) { // to the Next Sheet
+           GameManager.instance.ruleSheets[index].SetActive(false);
+           GameManager.instance.ruleSheets[index + 1].SetActive(true);
+        }
+        else { // to the Prev Sheet
+            GameManager.instance.ruleSheets[index].SetActive(false);
+            GameManager.instance.ruleSheets[index - 1].SetActive(true);
+        }
+    }
 }

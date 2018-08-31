@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy

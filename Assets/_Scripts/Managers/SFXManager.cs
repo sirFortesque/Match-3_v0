@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -22,7 +24,7 @@
 
 using UnityEngine;
 
-public enum Clip { Select, Swap, Clear };
+public enum Clip { Select, Swap, Clear, Explosion, Clock, X2Score, Snowflake, Win, Lose, Help };
 
 public class SFXManager : MonoBehaviour {
 	public static SFXManager instance;
@@ -36,6 +38,10 @@ public class SFXManager : MonoBehaviour {
     }
 
 	public void PlaySFX(Clip audioClip) {
-		sfx[(int)audioClip].Play();
+		sfx[(int)audioClip].Play();	    
 	}
+
+    public void StopSFX(Clip audioClip) {
+        sfx[(int)audioClip].Stop();
+    }
 }

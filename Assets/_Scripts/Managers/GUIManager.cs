@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,31 +27,102 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class GUIManager : MonoBehaviour {
-    public  static GUIManager   instance; // Singleton pattern
-	public  GameObject          gameOverPanel;
-	public  Text                yourScoreTxt;
-	public  Text                highScoreTxt;
+    public static GUIManager   instance; // Singleton pattern
+
+	// Level GUI
 	public  Text                scoreTxt;
 	public  Text                moveCounterTxt;
     public  int                 moveCounter;
-	
     private int                 score;
-    
+    // Start Screen
+    public  Text                levelNumberTxt;
+    public  Text                goalTxt;
+    // Pause Screen
+    public  GameObject          pauseScreen;
+    public  Text                levelNumberPauseScreenTxt;
+    public  Text                goalPauseScreenTxt;
+    public  Text                highScorePauseScreenTxt;
+    private static bool         paused;
+    // Win screen
+    public  GameObject          winScreen;
+    public  Text                scoreWinTxt;
+    public  Text                highScoreWinTxt;
+    // Lose screen
+    public  GameObject          loseScreen;
+    public  Text                scoreLoseTxt;
+    public  Text                highScoreLoseTxt;
+    // Game over panel
+    public  GameObject          gameOverPanel;
+    public  Text                yourScoreTxt;
+    public  Text                highScoreTxt;
+
+    /*
+    public GameObject levelGUI;
+    public GameObject menu;
+    public GameObject faderObj;
+    public Image faderImg;
+    public void ButtonPlay() {
+        menu.SetActive(false);
+        faderObj.SetActive(true);
+        GameManager.instance.FadeIn(faderObj, faderImg);
+        levelGUI.SetActive(true);
+    }
+     */
+
+    void Awake() {
+        moveCounterTxt.text = moveCounter.ToString();
+        instance = GetComponent<GUIManager>();
+
+        paused = false;
+        /*
+        // Finds inactive PauseScreen and assign it
+        foreach (var GO in Resources.FindObjectsOfTypeAll(typeof(GameObject))) {
+            if (GO.name == "PauseScreen") pauseScreen = (GameObject)GO;
+        }
+         */
+    }
+
+    void Start() {
+        levelNumberTxt.text = "Level " + GameManager.instance.levelNumber.ToString() + " !";
+        levelNumberPauseScreenTxt.text = levelNumberTxt.text;
+        goalTxt.text = "Your goal " + GameManager.instance.goal.ToString() + " points";
+        goalPauseScreenTxt.text = goalTxt.text;
+        highScorePauseScreenTxt.text = "Best: " + PlayerPrefs.GetInt("HighScore").ToString();
+    }
+
+    void Update() {
+        if (Input.GetKeyDown(KeyCode.Escape)) {
+            PauseMethod();
+        }
+    }
+
+    /*
+   void OnGUI() {
+       Event e = Event.current;
+       if (e.isKey && (e.keyCode == KeyCode.Escape)) {
+           if (e.type == EventType.KeyUp) {
+               PauseMethod();
+           }
+       }
+   }
+    */
+
     public int Score {
         get {
-            return score;
-            
+            return score;            
         }
         set {
-            score = value;
+            score = value;            
+            if (score >= GameManager.instance.goal) {
+                StartCoroutine(WaitForShifting());
+            }             
             scoreTxt.text = score.ToString();
         }
     }
 
     public int MoveCounter {
         get {
-            return moveCounter;
-            
+            return moveCounter;            
         }
         set {
             moveCounter = value;
@@ -61,16 +134,39 @@ public class GUIManager : MonoBehaviour {
         }
     }
 
-	void Awake() {	   
-	    moveCounterTxt.text = moveCounter.ToString();
-		instance = GetComponent<GUIManager>();
-	}
-
 	// Show the game over panel
-	public void GameOver() {
-		GameManager.instance.gameOver = true;
+	public void GameOver() {		
 
-		gameOverPanel.SetActive(true);
+	    if (score >= GameManager.instance.goal) {
+	        winScreen.SetActive(true);
+	        SFXManager.instance.PlaySFX(Clip.Win);
+	        if (score > PlayerPrefs.GetInt("HighScore")) {
+	            PlayerPrefs.SetInt("HighScore", score);
+	            highScoreWinTxt.text = "New Best: " + PlayerPrefs.GetInt("HighScore").ToString();
+	        } else {
+	            highScoreWinTxt.text = "Best: " + PlayerPrefs.GetInt("HighScore").ToString();
+	        }
+
+	        scoreWinTxt.text = score.ToString();
+	        return;
+	    }
+
+	    if (moveCounter <= 0) {
+	        GameManager.instance.gameOver = true;
+	        loseScreen.SetActive(true);
+	        SFXManager.instance.PlaySFX(Clip.Lose);
+	        if (score > PlayerPrefs.GetInt("HighScore")) {
+	            PlayerPrefs.SetInt("HighScore", score);
+	            highScoreLoseTxt.text = "New Best: " + PlayerPrefs.GetInt("HighScore").ToString();
+	        } else {
+	            highScoreLoseTxt.text = "Best: " + PlayerPrefs.GetInt("HighScore").ToString();
+	        }
+
+	        scoreLoseTxt.text = score.ToString();
+	    }
+
+	    /*
+		//gameOverPanel.SetActive(true);
 
 		if (score > PlayerPrefs.GetInt("HighScore")) {
 			PlayerPrefs.SetInt("HighScore", score);
@@ -80,12 +176,25 @@ public class GUIManager : MonoBehaviour {
 		}
 
 		yourScoreTxt.text = score.ToString();
+         */
 	}
 
     private IEnumerator WaitForShifting() {
         yield return new WaitUntil(() => !BoardManager.instance.IsShifting);
         yield return new WaitForSeconds(.25f);
         GameOver();
+    }   
+
+    public void PauseMethod() {
+        if (!paused) {
+            Time.timeScale = 0;
+            pauseScreen.SetActive(true);
+            paused = true;
+        } else {
+            Time.timeScale = 1;
+            pauseScreen.SetActive(false);
+            paused = false;
+        }
     }
 
 }

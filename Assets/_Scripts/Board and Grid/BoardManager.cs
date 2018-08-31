@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,39 +25,44 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 
 public class BoardManager : MonoBehaviour {
     public static BoardManager              instance; //Singleton pattern    
     public GameObject                       tile; //Tile prefab
+    public ParticleSystem                   explosionPrefab;
+    public GameObject                       moveCounterPrefab;
     public int                              xSize, ySize; //X and Y dimensions of the board
     public float                            shiftDelay; // Time delay for tile shifting 
     public bool                             wasShifted = false;
-    public float                            chanceForNewSpecialTile;
+    public float                            scoreBlinkDelay;
 
     public List<Sprite>                     characters = new List<Sprite>(); //Sprites for tiles
+    public float                            chanceForNewSpecialTile;
+    public List<Sprite>                     specialTiles = new List<Sprite>();
+    public List<float>                      specialTilesChances = new List<float>();
+    public static Dictionary<string, float> specialTilesChancesDictionary = new Dictionary<string, float>();       
     public static GameObject[,]             tiles; //Array for tiles in the board    
     public static List<List<GameObject>>    potentialMatches = new List<List<GameObject>>();
     
-
     public static readonly float            OpacityAnimationFrameDelay = .03f;
     public static readonly float            WaitBeforePotentialMatchesCheck = 1f;
     public static readonly float            WaitBeforeCheckNextPotentialMatches = 1f;
     public static readonly float            MoveFreezeTime = 7f;
-    public static float                     X2scoreTime = 20f;
-    public static int                       ScorePoints = 50;
+    public static float                     X2scoreTime = 6f;   
     public static int                       FreezeTileSteps = 5;
+    public static int                       ScorePoints;
 
     private static IEnumerator              AnimatePotentialMatchesCoroutine;
     private static IEnumerator              CheckPotentialMatchesCoroutine;
     private static IEnumerator              MoveFreezeCoroutine;
     private static IEnumerator              X2scoreCoroutine;
     private static IEnumerator              FreezeTileCoroutine;
+    private static IEnumerator              HighlightScoreCoroutine;
+    private static IEnumerator              LoopedPlayCoroutine;
 
-    public List<Sprite>                     specialTiles = new List<Sprite>();
-    public List<float>                      specialTilesChances = new List<float>();
-    public static Dictionary<string, float> specialTilesChancesDictionary = new Dictionary<string, float>();
-     
+    private Color                           moveCounterPrefabDefaultColor;
 
     //Tell the game when a match is found and the board is re-filling
     public bool IsShifting { get; set; } 
@@ -63,11 +70,24 @@ public class BoardManager : MonoBehaviour {
     public static bool moveFreeze { get; set; }
 
     void Awake() {
+        moveCounterPrefabDefaultColor = moveCounterPrefab.GetComponent<Image>().color;
+
         if (specialTilesChancesDictionary.Count == 0) {
             for (int i = 0; i < specialTiles.Count; i++) {
                 specialTilesChancesDictionary.Add(specialTiles[i].name, specialTilesChances[i]);
             }
-        }                
+        }
+
+       /*
+       //PlayerPrefs.SetInt("Level", PlayerPrefs.HasKey("Level") ? (PlayerPrefs.GetInt("Level") + 1) : 0);
+
+        if (PlayerPrefs.HasKey("Level")) {
+            PlayerPrefs.SetInt("Level", PlayerPrefs.GetInt("Level") + 1);
+        }
+        else {
+            PlayerPrefs.SetInt("Level", 0);
+        }
+        
         /*
         Debug.Log("specialTilesChancesDictionary are:");
         string str = "";
@@ -90,7 +110,9 @@ public class BoardManager : MonoBehaviour {
 	    instance = GetComponent<BoardManager>(); 	                    
 
 	    Vector2 offset = tile.GetComponent<SpriteRenderer>().bounds.size;
-	    CreateBoard(offset.x, offset.y);                 
+	    CreateBoard(offset.x, offset.y);
+
+	    ScorePoints = 50;
 	}
 
     void Update() {        
@@ -210,7 +232,7 @@ public class BoardManager : MonoBehaviour {
                     //if ("Random chance">1) then generate specialTile otherwise normal tile
                     if ((UnityEngine.Random.Range(0f, 1f) + chanceForNewSpecialTile) > 1) {
                         renders[k + 1].sprite = GetNewSpecialSprite();
-                        Debug.Log(renders[k + 1].sprite.name);
+                        //Debug.Log(renders[k + 1].sprite.name);
                     } else {
                         renders[k + 1].sprite = GetNewSprite(x, ySize - 1);
                     }                       
@@ -321,10 +343,20 @@ public class BoardManager : MonoBehaviour {
 
     public Action<GameObject> OnSpecBombBig;
     private void HandleOnSpecBombBig(GameObject tile) {
-        //Debug.Log("IN OnSpecBombBig - " + tile.GetComponent<SpriteRenderer>().sprite.name);        
+        //Debug.Log("IN OnSpecBombBig - " + tile.GetComponent<SpriteRenderer>().sprite.name);          
+        ParticleSystem explosion;
+        SFXManager.instance.PlaySFX(Clip.Explosion);
+
         foreach (var item in Tile.instance.GetAllAdjacentTiles(tile.transform)) {
-            if (item) item.GetComponent<SpriteRenderer>().sprite = null;
+            if (item) {
+                explosion = Instantiate(explosionPrefab, item.transform.position, item.transform.rotation);
+                explosion.Play();
+                item.GetComponent<SpriteRenderer>().sprite = null;
+            }
+                
         }
+        explosion = Instantiate(explosionPrefab, tile.transform.position, tile.transform.rotation);
+        explosion.Play();
         tile.GetComponent<SpriteRenderer>().sprite = null;
     }
 
@@ -338,14 +370,21 @@ public class BoardManager : MonoBehaviour {
         x = tile.GetComponent<Tile>().x;
         y = tile.GetComponent<Tile>().y;
 
+        ParticleSystem explosion;
+        SFXManager.instance.PlaySFX(Clip.Explosion);        
+
         for (int i = 0; i < xSize; i++) {
             if (tiles[i,y]) {
+                explosion = Instantiate(explosionPrefab, tiles[i, y].transform.position, tiles[i, y].transform.rotation);
+                explosion.Play();
                 tiles[i, y].GetComponent<SpriteRenderer>().sprite = null;   
             }            
         }
 
         for (int j = 0; j < ySize; j++) {
             if (tiles[x, j]) {
+                explosion = Instantiate(explosionPrefab, tiles[x, j].transform.position, tiles[x, j].transform.rotation);
+                explosion.Play();
                 tiles[x, j].GetComponent<SpriteRenderer>().sprite = null;
             }
         }
@@ -362,11 +401,25 @@ public class BoardManager : MonoBehaviour {
     }
     private IEnumerator MoveFreezeMethod() {
         moveFreeze = true;
-        //Debug.Log(moveFreeze.ToString() + ": " + Time.time.ToString());
-        yield return new WaitForSeconds(MoveFreezeTime);        
+        //Debug.Log(moveFreeze.ToString() + ": " + Time.time.ToString());         
+        Color myColor = new Color();
+        //ColorUtility.TryParseHtmlString("#31FF00", out myColor);
+        //moveCounterPrefab.GetComponent<Image>().color = myColor;
+
+        ColorUtility.TryParseHtmlString("#00DEFF", out myColor);
+        GUIManager.instance.moveCounterTxt.color = myColor;
+        
+        SFXManager.instance.PlaySFX(Clip.Clock);
+        
+        yield return new WaitForSeconds(MoveFreezeTime);
+
+        SFXManager.instance.StopSFX(Clip.Clock);
+
+        //moveCounterPrefab.GetComponent<Image>().color = Color.white;
+        GUIManager.instance.moveCounterTxt.color = Color.white;
         moveFreeze = false;
         //Debug.Log(moveFreeze.ToString() + ": " + Time.time.ToString());
-    }
+    }   
 
 
     public Action<GameObject> OnSpecX2score;
@@ -377,12 +430,101 @@ public class BoardManager : MonoBehaviour {
         X2scoreCoroutine = X2scoreMethod();
         StartCoroutine(X2scoreCoroutine);
     }
+    /* Other options of color blink
+
+    // Random color
+    //color.r = UnityEngine.Random.Range(0f, 1f);
+    //color.g = UnityEngine.Random.Range(0f, 1f);
+    //color.b = UnityEngine.Random.Range(0f, 1f);
+    //color.a = UnityEngine.Random.Range(0f, 1f);
+
+    One color blink
+     
+    if (rb == 1f) {
+        color.r -= 0.2f;
+        color.b -= 0.2f;
+        GUIManager.instance.scoreTxt.color = color;
+        if (color.r <= 0f) {
+            rb = 0f;
+            yield return new WaitForSeconds(scoreBlinkDelay);
+            continue;
+        }
+    }
+    if (rb == 0f) {                
+        color.r += 0.2f;
+        color.b += 0.2f;
+        GUIManager.instance.scoreTxt.color = color;
+        if (color.r >= 1f) {
+            rb = 1f;                   
+        }
+    }       
+    yield return new WaitForSeconds(scoreBlinkDelay);
+     */
     private IEnumerator X2scoreMethod() {
+        Color color = GUIManager.instance.scoreTxt.color;
+        
+        int[] rgbArr = new int[3];
+        // red   -> rgbArr[0]
+        // green -> rgbArr[1]
+        // blue  -> rgbArr[2]                                      
+                     
         ScorePoints = ScorePoints * 2;
-        //Debug.Log(ScorePoints.ToString() + ": " + Time.time.ToString());
-        yield return new WaitForSeconds(X2scoreTime);
-        ScorePoints = ScorePoints / 2;
-        //Debug.Log(ScorePoints.ToString() + ": " + Time.time.ToString());
+        SFXManager.instance.PlaySFX(Clip.X2Score);
+        float startTime = Time.time;
+        while ((Time.time - startTime) < X2scoreTime) { // Timer
+            // Increasing and decreasing RGB values 
+            // one by one for color blinking
+            for (int i = 0; i < rgbArr.Length; i++) {  
+                              
+                if (rgbArr[i] == 0) {
+                    for (float j = 0; j <= 1; j+=0.2f) {
+                        if (i == 0) {
+                            color.r = j;
+                            GUIManager.instance.scoreTxt.color = color;
+                        }
+                        if (i == 1) {
+                            color.g = j;
+                            GUIManager.instance.scoreTxt.color = color;
+                        }
+                        if (i == 2) {
+                            color.b = j;
+                            GUIManager.instance.scoreTxt.color = color;
+                        }                                               
+                        yield return new WaitForSeconds(scoreBlinkDelay);
+                    }
+                    rgbArr[i] = 1;
+                    continue;                    
+                }
+
+                else {
+                    if (rgbArr[i] == 1) {
+                        for (float j = 1; j >= 0; j-=0.2f) {
+                            if (i == 0) {
+                                color.r = j;
+                                GUIManager.instance.scoreTxt.color = color;
+                            }
+                            if (i == 1) {
+                                color.g = j;
+                                GUIManager.instance.scoreTxt.color = color;
+                            }
+                            if (i == 2) {
+                                color.b = j;
+                                GUIManager.instance.scoreTxt.color = color;
+                            }
+                            yield return new WaitForSeconds(scoreBlinkDelay);
+                        }
+                    }
+                    rgbArr[i] = 0;
+                    continue;
+                }                 
+            }           
+        }
+        ScorePoints = ScorePoints / 2;       
+        color.r = 1f;
+        color.g = 1f;
+        color.b = 1f;        
+        GUIManager.instance.scoreTxt.color = color;
+        SFXManager.instance.StopSFX(Clip.X2Score);
     }
 
 
@@ -394,7 +536,6 @@ public class BoardManager : MonoBehaviour {
         StartCoroutine(FreezeTileCoroutine); 
         tile.GetComponent<SpriteRenderer>().sprite = null;
     } 
-
     private IEnumerator FreezeTileMethod(GameObject tile) {
         int x = tile.GetComponent<Tile>().x,
             y = tile.GetComponent<Tile>().y;
@@ -415,6 +556,8 @@ public class BoardManager : MonoBehaviour {
             item.GetComponent<Tile>().freezeTile = true;
             item.GetComponent<SpriteRenderer>().color = Color.blue;
         }
+
+        SFXManager.instance.PlaySFX(Clip.Snowflake);
                 
         int moveCounterNow = GUIManager.instance.MoveCounter;
         yield return new WaitUntil(() => (GUIManager.instance.MoveCounter == (moveCounterNow - FreezeTileSteps)));
@@ -422,6 +565,12 @@ public class BoardManager : MonoBehaviour {
         foreach (var item in adjacentTiles) {
             item.GetComponent<Tile>().freezeTile = false;
             item.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+
+        //SFXManager.instance.StopSFX(Clip.Snowflake);
+
+        foreach (var item in adjacentTiles) {
+            item.GetComponent<Tile>().ClearAllMatchess();
         }        
     }
 
@@ -479,7 +628,11 @@ public class BoardManager : MonoBehaviour {
             CheckVertical();
         }
 
-        GUIManager.instance.Score -= 300;
+        if (HighlightScoreCoroutine != null) { 
+            BoardManager.instance.StopCoroutine(HighlightScoreCoroutine);
+        }
+        HighlightScoreCoroutine = HighlightScore();
+        BoardManager.instance.StartCoroutine(HighlightScoreCoroutine);
 
         // Animate potentialMatches
         StartCheckForPotentialMatches(); 
@@ -498,7 +651,7 @@ public class BoardManager : MonoBehaviour {
             Debug.Log(str);
         } 
          */ 
-    }
+    }    
 
     // Check cross-like potential matches
     public void CheckCrossLike() {
@@ -668,6 +821,13 @@ public class BoardManager : MonoBehaviour {
         }
     }
 
+    IEnumerator HighlightScore() {
+        GUIManager.instance.Score -= 300;
+        GUIManager.instance.scoreTxt.color = Color.red;
+        yield return new WaitForSeconds(0.2f);
+        GUIManager.instance.scoreTxt.color = Color.white;
+    }
+
     private List<GameObject> RemoveNullElements(List<GameObject> adjacentTiles) {
         List<GameObject> tempList = new List<GameObject>();
         for (int k = 0; k < adjacentTiles.Count; k++) {
@@ -768,8 +928,9 @@ public class BoardManager : MonoBehaviour {
         }
     }
 
-    public static IEnumerator AnimateAllPotentialMatches(List<List<GameObject>> potentialMatches) {        
+    public static IEnumerator AnimateAllPotentialMatches(List<List<GameObject>> potentialMatches) {
             for (int j = 0; j < potentialMatches.Count; j++) {
+                SFXManager.instance.PlaySFX(Clip.Help);
 
                 for (float i = 1f; i >= 0.3f; i -= 0.1f) {
                     foreach (var item in potentialMatches[j]) {
@@ -790,6 +951,6 @@ public class BoardManager : MonoBehaviour {
                 }
 
                 yield return new WaitForSeconds(WaitBeforeCheckNextPotentialMatches);
-            }
+            }       
     }
 }

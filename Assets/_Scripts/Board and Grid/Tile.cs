@@ -1,4 +1,6 @@
 ﻿/*
+ * Part of this code were taken from the internet tutorial and requires the following comment:
+ * 
  * Copyright (c) 2017 Razeware LLC
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,8 +26,10 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.EventSystems;
 
-public class Tile : MonoBehaviour {
+
+public class Tile : MonoBehaviour, IPointerDownHandler {
     public static Tile      instance;
     public bool             wasSwapped = false;
     public int              x = 0, y = 0; // coordinates of the tile[x, y] on the Board   
@@ -60,9 +64,43 @@ public class Tile : MonoBehaviour {
 		previousSelected = null;
 	}
 
+    public void OnPointerDown(PointerEventData data) {
+        //Debug.Log("event - " + data.pointerCurrentRaycast.gameObject.GetComponent<SpriteRenderer>().sprite.name);
+        //Debug.Log("this - " + this.GetComponent<SpriteRenderer>().sprite.name);
+        // Don't select tile when it's empty or when the game ends or when Tile is freezed
+        if (render.sprite == null || BoardManager.instance.IsShifting || freezeTile) {
+            return;
+        }
+
+        if (isSelected) {
+            Deselect();
+        } else {   // Is it the first tile selected?
+            if (previousSelected == null) {
+                Select();
+            }
+            // If it wasn't the first one that was selected...
+            else {   // ...and surrounding tiles .Contains previousSelected tile
+                // then swap tiles
+                // and .ClearAllMatches if there are any
+                if (GetAllAdjacentTiles(this.GetComponent<Transform>()).Contains(previousSelected.gameObject)) {
+                    SwapSprite(previousSelected.render);
+                    previousSelected.ClearAllMatchess();
+                    previousSelected.Deselect();
+                    ClearAllMatchess();
+                } else {   // The tile isn't next to the previously selected one,
+                    // deselect the previous one and select the newly selected
+                    previousSelected.GetComponent<Tile>().Deselect();// <<<<<<<????? зачем GetComponent если раньше deselect без него делали
+                    Select();
+                }
+
+            }
+        }
+    }
+
+    /*
     // Tile selecting
-    void OnMouseDown()
-    {
+    void OnMouseDown() {
+        Debug.Log("OnMouseDown");
         // Don't select tile when it's empty or when the game ends or when Tile is freezed
         if (render.sprite == null || BoardManager.instance.IsShifting || freezeTile)
         {
@@ -101,6 +139,7 @@ public class Tile : MonoBehaviour {
             }
         }
     }
+     */
 
     public void SwapSprite(SpriteRenderer render2)
     {
@@ -153,7 +192,7 @@ public class Tile : MonoBehaviour {
 
         // Keep firing new raycasts until either your raycast hits nothing,
         // or the tiles sprite differs from the hit object sprite
-        while (hit.collider != null && hit.collider.GetComponent<SpriteRenderer>().sprite == render.sprite)
+        while (hit.collider != null && hit.collider.GetComponent<SpriteRenderer>().sprite == render.sprite && (!hit.collider.GetComponent<Tile>().freezeTile))
         {
             // If both conditions are met, you consider it a match 
             // and add it to your list
