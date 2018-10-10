@@ -26,6 +26,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
+using System;
 
 public class GameManager : MonoBehaviour {
 
@@ -38,9 +40,9 @@ public class GameManager : MonoBehaviour {
     public int                  levelNumber;
     public int                  startGoal = 1500;
     public int                  goal;
-
-    public GameObject[]         ruleSheets = new GameObject [4];
-
+    public int                  numberOfRuleSheets;  
+    public List<GameObject>     ruleSheets = new List<GameObject>();    
+    
 	private Color               fadeTransparency = new Color(0, 0, 0, .04f);
 	private string              currentScene;
 	private AsyncOperation      async;
@@ -49,7 +51,7 @@ public class GameManager : MonoBehaviour {
     void Awake() {
         // Only 1 Game Manager can exist at a time
         if (instance == null) {
-            DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject);            
             instance = GetComponent<GameManager>();
             SceneManager.sceneLoaded += OnLevelFinishedLoading;
             levelNumber = 0;
@@ -62,7 +64,7 @@ public class GameManager : MonoBehaviour {
         if (menuHighScoreTxt && PlayerPrefs.HasKey("HighScore")) {
             menuHighScoreTxt.text = "HighScore: " + PlayerPrefs.GetInt("HighScore").ToString() + "!";
         }                
-    }
+    }  
 
     private void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
         currentScene = scene.name;
@@ -76,7 +78,30 @@ public class GameManager : MonoBehaviour {
             Debug.Log("level - " + levelNumber);            
             Debug.Log("goal - " + goal);         
             Debug.Log("GUIManager.instance.MoveCounter - " + GUIManager.instance.moveCounter);
-        }        
+        }
+
+        if (CurrentSceneName == "Menu") {            
+            ruleSheets.Clear();
+            for (int i = 0; i < numberOfRuleSheets; i++) {
+                ruleSheets.Add(new GameObject());
+            }
+
+            var allGO = Resources.FindObjectsOfTypeAll<GameObject>();
+            // OR(!!!)
+            // ruleSheets enabled,
+            // add references to ruleSheets,
+            // ruleSheets disabled.
+
+            foreach (var item in allGO) {
+                if (item.name.StartsWith("Sheet_") && !(item.scene.name == null)) {
+                    // item.scene.name == null - ITS PREFAB!!                      
+
+                    // "item.name.Substring(6)" its digit after "Sheet_" 
+                    // and minus one its index for ruleSheets list
+                    ruleSheets[Convert.ToInt32(item.name.Substring(6)) - 1] = item;     
+                }
+            }            
+        }
 
         instance.StartCoroutine(FadeIn(instance.faderObj, instance.faderImg));
     }
@@ -163,22 +188,23 @@ public class GameManager : MonoBehaviour {
 
     public void RulesButton(bool prevORnext) { // prev = false; next = true
         // Find which sheet is active now
-        int index = 0;
-        for (int i = 0; i < GameManager.instance.ruleSheets.Length; i++) {
+        int index = 0;        
+        int i = 0;
+        foreach (var item in GameManager.instance.ruleSheets) {
             if (GameManager.instance.ruleSheets[i].activeSelf) {
-                index = i;
-                //Debug.Log(">>> i = " + i + " index = " + index);
+                index = i;                
                 break;
             }
+            i++;
         }
 
-        if (prevORnext) { // to the Next Sheet
-           GameManager.instance.ruleSheets[index].SetActive(false);
-           GameManager.instance.ruleSheets[index + 1].SetActive(true);
+        if (prevORnext) { // to the Next Sheet            
+            GameManager.instance.ruleSheets[index].SetActive(false);
+            GameManager.instance.ruleSheets[index + 1].SetActive(true);            
         }
         else { // to the Prev Sheet
             GameManager.instance.ruleSheets[index].SetActive(false);
-            GameManager.instance.ruleSheets[index - 1].SetActive(true);
+            GameManager.instance.ruleSheets[index - 1].SetActive(true);            
         }
     }
 }

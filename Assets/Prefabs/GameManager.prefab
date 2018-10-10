@@ -225,9 +225,17 @@ MonoBehaviour:
   faderImg: {fileID: 114656519436538626}
   gameOver: 0
   fadeSpeed: 0.02
-  menuHighScoreTxt: {fileID: 0}
-  level: 0
+  menuHighScoreTxt: {fileID: 114011653028271534, guid: 8e5b36411e6358441ab1f769093b1091,
+    type: 2}
+  levelNumber: 0
+  startGoal: 1500
   goal: 0
+  ruleSheets:
+  - {fileID: 1538410012926022, guid: 33ad901d509ee8e4389051c3d1833b08, type: 2}
+  - {fileID: 1243701086154372, guid: 33ad901d509ee8e4389051c3d1833b08, type: 2}
+  - {fileID: 1619454383578614, guid: 33ad901d509ee8e4389051c3d1833b08, type: 2}
+  - {fileID: 1820846275147264, guid: 33ad901d509ee8e4389051c3d1833b08, type: 2}
+  - {fileID: 1963356648946416, guid: 33ad901d509ee8e4389051c3d1833b08, type: 2}
 --- !u!114 &114656519436538626
 MonoBehaviour:
   m_ObjectHideFlags: 1
