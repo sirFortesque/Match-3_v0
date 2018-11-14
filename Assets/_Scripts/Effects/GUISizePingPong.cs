@@ -24,6 +24,7 @@
 
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(RectTransform))]
 public class GUISizePingPong : MonoBehaviour {
@@ -32,9 +33,16 @@ public class GUISizePingPong : MonoBehaviour {
 	public float changeDelay = .03f;
 	RectTransform rectTransform;
 
+    public Text menuHighScoreTxt; // Used only in the "Menu" scene.
+
+
 	void Start() {
 		rectTransform = GetComponent<RectTransform>();
 		StartCoroutine(PingPongSize());
+
+        if (PlayerPrefs.HasKey("HighScore")) {
+            menuHighScoreTxt.text = "HighScore: " + PlayerPrefs.GetInt("HighScore").ToString() + "!";
+        } else menuHighScoreTxt.text = "";
 	}
 
 	// Change size down to minScale then back up to max scale

@@ -36,9 +36,9 @@ public class GameManager : MonoBehaviour {
 	public Image                faderImg;
 	public bool                 gameOver = false;
 	public float                fadeSpeed = .02f;
-    public Text                 menuHighScoreTxt; // Used only in the "Menu" scene.
+    //public Text                 menuHighScoreTxt; // Used only in the "Menu" scene.
     public int                  levelNumber;
-    public int                  startGoal = 1500;
+    public int                  startGoal;
     public int                  goal;
     public int                  numberOfRuleSheets;  
     public List<GameObject>     ruleSheets = new List<GameObject>();    
@@ -59,18 +59,15 @@ public class GameManager : MonoBehaviour {
         }
         else {
             Destroy(gameObject);
-        }
-
-        if (menuHighScoreTxt && PlayerPrefs.HasKey("HighScore")) {
-            menuHighScoreTxt.text = "HighScore: " + PlayerPrefs.GetInt("HighScore").ToString() + "!";
-        }                
+        }        
     }  
 
     private void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode) {
         currentScene = scene.name;
 
         // increasing level difficulty
-        if (CurrentSceneName == "Game") {            
+        if (CurrentSceneName == "Game") {
+            SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
             levelNumber++;
             goal = startGoal * levelNumber;
             GUIManager.instance.MoveCounter -= 5 * levelNumber;
@@ -80,7 +77,8 @@ public class GameManager : MonoBehaviour {
             Debug.Log("GUIManager.instance.MoveCounter - " + GUIManager.instance.moveCounter);
         }
 
-        if (CurrentSceneName == "Menu") {            
+        if (CurrentSceneName == "Menu") {
+            SFXManager.instance.PlaySFX(Clip.Hyperfun);
             ruleSheets.Clear();
             for (int i = 0; i < numberOfRuleSheets; i++) {
                 ruleSheets.Add(new GameObject());
@@ -138,7 +136,8 @@ public class GameManager : MonoBehaviour {
 
         if (CurrentSceneName != "Menu") {
             Time.timeScale = 1;
-            StopAllCoroutines();            
+            StopAllCoroutines();
+            StopSFX();
             LoadScene("Menu");
             GameManager.instance.levelNumber = 0;
             GameManager.instance.goal = 0;            
@@ -169,7 +168,10 @@ public class GameManager : MonoBehaviour {
     
 	// Reload the current scene
 	public void ReloadScene() {
-		LoadScene(SceneManager.GetActiveScene().name);
+        StopAllCoroutines();
+        SFXManager.instance.StopSFX(Clip.X2Score);
+        SFXManager.instance.StopSFX(Clip.Clock); 
+        LoadScene(SceneManager.GetActiveScene().name);
 	}
     
     public void ExitGame() {
@@ -206,5 +208,11 @@ public class GameManager : MonoBehaviour {
             GameManager.instance.ruleSheets[index].SetActive(false);
             GameManager.instance.ruleSheets[index - 1].SetActive(true);            
         }
+    }
+
+    public void StopSFX() {
+        SFXManager.instance.StopSFX(Clip.Hyperfun);
+        SFXManager.instance.StopSFX(Clip.X2Score);
+        SFXManager.instance.StopSFX(Clip.Clock);
     }
 }

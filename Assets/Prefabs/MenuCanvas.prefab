@@ -518,7 +518,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &1463081344696322
 GameObject:
   m_ObjectHideFlags: 1
@@ -1045,7 +1045,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'HighScore: 30000!'
+  m_Text: 
 --- !u!114 &114022820583992942
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1343,7 +1343,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
+  m_ScaleFactor: 0.17
   m_ReferenceResolution: {x: 640, y: 960}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 1
@@ -3299,6 +3299,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minScale: {x: 0.5, y: 0.5, z: 0.5}
   changeDelay: 0.03
+  menuHighScoreTxt: {fileID: 114011653028271534}
 --- !u!114 &114892347044968152
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3765,7 +3766,7 @@ Canvas:
   m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
-  m_PixelPerfect: 0
+  m_PixelPerfect: 1
   m_ReceivesEvents: 1
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
@@ -4015,7 +4016,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -322, y: 170}
+  m_AnchoredPosition: {x: -299, y: 162}
   m_SizeDelta: {x: 169.2, y: 108}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224409391094084828

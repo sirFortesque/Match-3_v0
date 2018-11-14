@@ -33,7 +33,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler {
     public static Tile      instance;
     public bool             wasSwapped = false;
     public int              x = 0, y = 0; // coordinates of the tile[x, y] on the Board   
-    public bool             freezeTile = false;
+    public bool             freezeTile;
     
 	private static Color    selectedColor = new Color(.5f, .5f, .5f, 1.0f);
 	private static Tile     previousSelected = null;

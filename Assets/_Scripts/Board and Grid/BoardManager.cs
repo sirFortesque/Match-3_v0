@@ -37,11 +37,19 @@ public class BoardManager : MonoBehaviour {
     public float                            shiftDelay; // Time delay for tile shifting 
     public bool                             wasShifted = false;
     public float                            scoreBlinkDelay;
+    public int                              scorePointsInspector;
 
     public List<Sprite>                     characters = new List<Sprite>(); //Sprites for tiles
     public float                            chanceForNewSpecialTile;
     public List<Sprite>                     specialTiles = new List<Sprite>();
     public List<float>                      specialTilesChances = new List<float>();
+    /* specialTilesChances:
+     * Bomb big = 1.8
+     * bomb cross = 0.3
+     * clock = 0.6
+     * x2score = 1.3
+     * snowflake = 0.9
+     */
     public static Dictionary<string, float> specialTilesChancesDictionary = new Dictionary<string, float>();       
     public static GameObject[,]             tiles; //Array for tiles in the board    
     public static List<List<GameObject>>    potentialMatches = new List<List<GameObject>>();
@@ -52,10 +60,12 @@ public class BoardManager : MonoBehaviour {
     public static readonly float            MoveFreezeTime = 7f;
     public static float                     X2scoreTime = 6f;   
     public static int                       FreezeTileSteps = 5;
-    public static int                       ScorePoints;
+    public static int                       ScorePoints;    
 
+    private static IEnumerator              ShiftTilesDownCoroutine;
     private static IEnumerator              AnimatePotentialMatchesCoroutine;
     private static IEnumerator              CheckPotentialMatchesCoroutine;
+    private static IEnumerator              BombCrossCoroutine;
     private static IEnumerator              MoveFreezeCoroutine;
     private static IEnumerator              X2scoreCoroutine;
     private static IEnumerator              FreezeTileCoroutine;
@@ -70,6 +80,8 @@ public class BoardManager : MonoBehaviour {
     public static bool moveFreeze { get; set; }
 
     void Awake() {
+        moveFreeze = false;
+
         moveCounterPrefabDefaultColor = moveCounterPrefab.GetComponent<Image>().color;
 
         if (specialTilesChancesDictionary.Count == 0) {
@@ -112,7 +124,7 @@ public class BoardManager : MonoBehaviour {
 	    Vector2 offset = tile.GetComponent<SpriteRenderer>().bounds.size;
 	    CreateBoard(offset.x, offset.y);
 
-	    ScorePoints = 50;
+        ScorePoints = scorePointsInspector;
 	}
 
     void Update() {        
@@ -184,7 +196,11 @@ public class BoardManager : MonoBehaviour {
     {
         for (int x = 0; x < xSize; x++) {
             for (int y = 0; y < ySize; y++) {
+
+                //if (tiles[x, y].GetComponent<Tile>().freezeTile) Debug.Log("FREEZE");
+
                 if (tiles[x, y].GetComponent<SpriteRenderer>().sprite == null) {
+                    //ShiftTilesDownCoroutine = ShiftTilesDown(x, y, shiftDelay);
                     yield return StartCoroutine(ShiftTilesDown(x, y, shiftDelay));
                     break;
                 }
@@ -207,6 +223,14 @@ public class BoardManager : MonoBehaviour {
 
         // Loop through and finds how many spaces it needs to shift downwards
         for (int y = yStart; y < ySize; y++) {
+
+            /*
+            if (tiles[x, y].GetComponent<Tile>().freezeTile) {
+                Debug.Log("freeeze!!!");
+                StopCoroutine(ShiftTilesDownCoroutine);
+            }
+             */
+
             SpriteRenderer render = tiles[x, y].GetComponent<SpriteRenderer>();
             if (render.sprite == null) {
                 nullCount++; // Number of spaces
@@ -314,9 +338,11 @@ public class BoardManager : MonoBehaviour {
         //Debug.Log("specialSprite - " + specialSprite);
 
         return specialSprite;
-    }         
+    }
 
-    ////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////  SPECIAL TILES  //////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     public void ChooseEvent(GameObject tile) {
         string tileName = tile.GetComponent<SpriteRenderer>().sprite.name;
         switch (tileName) {
@@ -341,10 +367,11 @@ public class BoardManager : MonoBehaviour {
         }
     }    
 
+
     public Action<GameObject> OnSpecBombBig;
     private void HandleOnSpecBombBig(GameObject tile) {
         //Debug.Log("IN OnSpecBombBig - " + tile.GetComponent<SpriteRenderer>().sprite.name);          
-        ParticleSystem explosion;
+        ParticleSystem explosion;      
         SFXManager.instance.PlaySFX(Clip.Explosion);
 
         foreach (var item in Tile.instance.GetAllAdjacentTiles(tile.transform)) {
@@ -371,14 +398,57 @@ public class BoardManager : MonoBehaviour {
         y = tile.GetComponent<Tile>().y;
 
         ParticleSystem explosion;
+
+        SFXManager.instance.PauseSFX(Clip.Hyperfun);
         SFXManager.instance.PlaySFX(Clip.Explosion);        
 
         for (int i = 0; i < xSize; i++) {
-            if (tiles[i,y]) {
+            if (tiles[i, y]) {
                 explosion = Instantiate(explosionPrefab, tiles[i, y].transform.position, tiles[i, y].transform.rotation);
                 explosion.Play();
-                tiles[i, y].GetComponent<SpriteRenderer>().sprite = null;   
-            }            
+                tiles[i, y].GetComponent<SpriteRenderer>().sprite = null;                
+            }
+        }
+
+        for (int j = 0; j < ySize; j++) {
+            if (tiles[x, j]) {
+                explosion = Instantiate(explosionPrefab, tiles[x, j].transform.position, tiles[x, j].transform.rotation);
+                explosion.Play();
+                tiles[x, j].GetComponent<SpriteRenderer>().sprite = null;                
+            }
+        }
+
+        SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
+    }
+
+    /*
+    private void HandleOnSpecBombCross(GameObject tile) {        
+        if (BombCrossCoroutine != null) StopCoroutine(BombCrossCoroutine);
+        BombCrossCoroutine = BombCrossMethod(tile);
+        StartCoroutine(BombCrossCoroutine);
+    }
+
+    private IEnumerator BombCrossMethod(GameObject tile) {
+        //Debug.Log("IN OnSpecBombCross - " + tile.GetComponent<SpriteRenderer>().sprite.name);
+        int x = 0,
+            y = 0;
+
+        x = tile.GetComponent<Tile>().x;
+        y = tile.GetComponent<Tile>().y;
+
+        ParticleSystem explosion;
+
+        SFXManager.instance.PauseSFX(Clip.Hyperfun);
+        //SFXManager.instance.PlaySFX(Clip.Explosion);        
+
+        for (int i = 0; i < xSize; i++) {
+            if (tiles[i, y]) {
+                explosion = Instantiate(explosionPrefab, tiles[i, y].transform.position, tiles[i, y].transform.rotation);
+                explosion.Play();
+                tiles[i, y].GetComponent<SpriteRenderer>().sprite = null;
+                SFXManager.instance.PlaySFX(Clip.Explosion);
+                yield return new WaitUntil(() => !SFXManager.instance.IsPlayingSFX(Clip.Explosion ) );
+            }
         }
 
         for (int j = 0; j < ySize; j++) {
@@ -386,18 +456,22 @@ public class BoardManager : MonoBehaviour {
                 explosion = Instantiate(explosionPrefab, tiles[x, j].transform.position, tiles[x, j].transform.rotation);
                 explosion.Play();
                 tiles[x, j].GetComponent<SpriteRenderer>().sprite = null;
+                SFXManager.instance.PlaySFX(Clip.Explosion);
+                yield return new WaitUntil(() => !SFXManager.instance.IsPlayingSFX(Clip.Explosion));
             }
         }
-    }
 
+        SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
+    }
+     */
 
     public Action<GameObject> OnSpecClock;
     private void HandleOnSpecClock(GameObject tile) {
         //Debug.Log("IN OnSpecClock - " + tile.GetComponent<SpriteRenderer>().sprite.name);
         tile.GetComponent<SpriteRenderer>().sprite = null;
-        if (MoveFreezeCoroutine != null) StopCoroutine(MoveFreezeCoroutine);
+        if (MoveFreezeCoroutine != null) BoardManager.instance.StopCoroutine(MoveFreezeCoroutine);
         MoveFreezeCoroutine = MoveFreezeMethod();
-        StartCoroutine(MoveFreezeCoroutine);
+        BoardManager.instance.StartCoroutine(MoveFreezeCoroutine);
     }
     private IEnumerator MoveFreezeMethod() {
         moveFreeze = true;
@@ -408,12 +482,14 @@ public class BoardManager : MonoBehaviour {
 
         ColorUtility.TryParseHtmlString("#00DEFF", out myColor);
         GUIManager.instance.moveCounterTxt.color = myColor;
-        
+
+        SFXManager.instance.PauseSFX(Clip.Hyperfun);
         SFXManager.instance.PlaySFX(Clip.Clock);
         
         yield return new WaitForSeconds(MoveFreezeTime);
 
         SFXManager.instance.StopSFX(Clip.Clock);
+        SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
 
         //moveCounterPrefab.GetComponent<Image>().color = Color.white;
         GUIManager.instance.moveCounterTxt.color = Color.white;
@@ -423,12 +499,12 @@ public class BoardManager : MonoBehaviour {
 
 
     public Action<GameObject> OnSpecX2score;
-    private void HandleOnSpecX2score(GameObject tile) {
+    public void HandleOnSpecX2score(GameObject tile) {
         //Debug.Log("IN OnSpecX2score - " + tile.GetComponent<SpriteRenderer>().sprite.name);
         tile.GetComponent<SpriteRenderer>().sprite = null;
-        if (X2scoreCoroutine != null) StopCoroutine(X2scoreCoroutine);
+        if (X2scoreCoroutine != null) BoardManager.instance.StopCoroutine(X2scoreCoroutine);
         X2scoreCoroutine = X2scoreMethod();
-        StartCoroutine(X2scoreCoroutine);
+        BoardManager.instance.StartCoroutine(X2scoreCoroutine);
     }
     /* Other options of color blink
 
@@ -460,7 +536,7 @@ public class BoardManager : MonoBehaviour {
     }       
     yield return new WaitForSeconds(scoreBlinkDelay);
      */
-    private IEnumerator X2scoreMethod() {
+    public IEnumerator X2scoreMethod() {
         Color color = GUIManager.instance.scoreTxt.color;
         
         int[] rgbArr = new int[3];
@@ -469,36 +545,18 @@ public class BoardManager : MonoBehaviour {
         // blue  -> rgbArr[2]                                      
                      
         ScorePoints = ScorePoints * 2;
+        SFXManager.instance.PauseSFX(Clip.Hyperfun);
         SFXManager.instance.PlaySFX(Clip.X2Score);
-        float startTime = Time.time;
-        while ((Time.time - startTime) < X2scoreTime) { // Timer
-            // Increasing and decreasing RGB values 
-            // one by one for color blinking
-            for (int i = 0; i < rgbArr.Length; i++) {  
-                              
-                if (rgbArr[i] == 0) {
-                    for (float j = 0; j <= 1; j+=0.2f) {
-                        if (i == 0) {
-                            color.r = j;
-                            GUIManager.instance.scoreTxt.color = color;
-                        }
-                        if (i == 1) {
-                            color.g = j;
-                            GUIManager.instance.scoreTxt.color = color;
-                        }
-                        if (i == 2) {
-                            color.b = j;
-                            GUIManager.instance.scoreTxt.color = color;
-                        }                                               
-                        yield return new WaitForSeconds(scoreBlinkDelay);
-                    }
-                    rgbArr[i] = 1;
-                    continue;                    
-                }
 
-                else {
-                    if (rgbArr[i] == 1) {
-                        for (float j = 1; j >= 0; j-=0.2f) {
+        float startTime = Time.time;
+        while ((Time.time - startTime) < X2scoreTime) { // Timer            
+
+                // Increasing and decreasing RGB values 
+                // one by one for color blinking
+                for (int i = 0; i < rgbArr.Length; i++) {
+
+                    if (rgbArr[i] == 0) {
+                        for (float j = 0; j <= 1; j += 0.2f) {
                             if (i == 0) {
                                 color.r = j;
                                 GUIManager.instance.scoreTxt.color = color;
@@ -513,11 +571,30 @@ public class BoardManager : MonoBehaviour {
                             }
                             yield return new WaitForSeconds(scoreBlinkDelay);
                         }
+                        rgbArr[i] = 1;
+                        continue;
+                    } else {
+                        if (rgbArr[i] == 1) {
+                            for (float j = 1; j >= 0; j -= 0.2f) {
+                                if (i == 0) {
+                                    color.r = j;
+                                    GUIManager.instance.scoreTxt.color = color;
+                                }
+                                if (i == 1) {
+                                    color.g = j;
+                                    GUIManager.instance.scoreTxt.color = color;
+                                }
+                                if (i == 2) {
+                                    color.b = j;
+                                    GUIManager.instance.scoreTxt.color = color;
+                                }
+                                yield return new WaitForSeconds(scoreBlinkDelay);
+                            }
+                        }
+                        rgbArr[i] = 0;
+                        continue;
                     }
-                    rgbArr[i] = 0;
-                    continue;
-                }                 
-            }           
+                }                                  
         }
         ScorePoints = ScorePoints / 2;       
         color.r = 1f;
@@ -525,6 +602,7 @@ public class BoardManager : MonoBehaviour {
         color.b = 1f;        
         GUIManager.instance.scoreTxt.color = color;
         SFXManager.instance.StopSFX(Clip.X2Score);
+        SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
     }
 
 
@@ -556,7 +634,7 @@ public class BoardManager : MonoBehaviour {
             item.GetComponent<Tile>().freezeTile = true;
             item.GetComponent<SpriteRenderer>().color = Color.blue;
         }
-
+      
         SFXManager.instance.PlaySFX(Clip.Snowflake);
                 
         int moveCounterNow = GUIManager.instance.MoveCounter;
@@ -565,16 +643,16 @@ public class BoardManager : MonoBehaviour {
         foreach (var item in adjacentTiles) {
             item.GetComponent<Tile>().freezeTile = false;
             item.GetComponent<SpriteRenderer>().color = Color.white;
-        }
-
-        //SFXManager.instance.StopSFX(Clip.Snowflake);
+        }        
 
         foreach (var item in adjacentTiles) {
             item.GetComponent<Tile>().ClearAllMatchess();
         }        
     }
 
-    ////////////////////////////////////////////////    
+    ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////  HELP BUTTON  ////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     /*
                             //Debug.Log("adjacentTiles[k] - " + adjacentTiles[k].GetComponent<SpriteRenderer>().sprite.name);                            
                             //Debug.Log("tiles[i,j] - " + tiles[i, j].GetComponent<SpriteRenderer>().sprite.name);

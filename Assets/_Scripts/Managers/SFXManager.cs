@@ -24,17 +24,33 @@
 
 using UnityEngine;
 
-public enum Clip { Select, Swap, Clear, Explosion, Clock, X2Score, Snowflake, Win, Lose, Help };
+public enum Clip { Select, Swap, Clear, Explosion, Clock, X2Score, Snowflake, Win, Lose, Help, Hyperfun };
 
 public class SFXManager : MonoBehaviour {
 	public static SFXManager instance;
 
 	private AudioSource[] sfx;
 
-	// Use this for initialization
+    /*
+    void Awake() {
+        if (instance == null) {
+            DontDestroyOnLoad(gameObject);
+            instance = GetComponent<SFXManager>();
+            sfx = GetComponents<AudioSource>();
+        } else {
+            Destroy(gameObject);
+        }
+    }
+     */
+
 	void Start () {
-		instance = GetComponent<SFXManager>();
-		sfx = GetComponents<AudioSource>();
+        if (instance == null) {
+            DontDestroyOnLoad(gameObject);
+            instance = GetComponent<SFXManager>();
+            sfx = GetComponents<AudioSource>();
+        } else {
+            Destroy(gameObject);
+        }
     }
 
 	public void PlaySFX(Clip audioClip) {
@@ -43,5 +59,17 @@ public class SFXManager : MonoBehaviour {
 
     public void StopSFX(Clip audioClip) {
         sfx[(int)audioClip].Stop();
+    }
+
+    public void PauseSFX(Clip audioClip) {
+        sfx[(int)audioClip].Pause();
+    }
+
+    public void UnPauseSFX(Clip audioClip) {
+        sfx[(int)audioClip].UnPause();
+    }
+
+    public bool IsPlayingSFX(Clip audioClip) {
+        return sfx[(int)audioClip].isPlaying;
     }
 }

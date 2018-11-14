@@ -85,7 +85,7 @@ public class GUIManager : MonoBehaviour {
     void Start() {
         levelNumberTxt.text = "Level " + GameManager.instance.levelNumber.ToString() + " !";
         levelNumberPauseScreenTxt.text = levelNumberTxt.text;
-        goalTxt.text = "Your goal " + GameManager.instance.goal.ToString() + " points";
+        goalTxt.text = "Your goal \n" + GameManager.instance.goal.ToString() + " points";
         goalPauseScreenTxt.text = goalTxt.text;
         highScorePauseScreenTxt.text = "Best: " + PlayerPrefs.GetInt("HighScore").ToString();
     }
@@ -135,11 +135,17 @@ public class GUIManager : MonoBehaviour {
     }
 
 	// Show the game over panel
-	public void GameOver() {		
+	public void GameOver() {
+        StopAllCoroutines();
 
-	    if (score >= GameManager.instance.goal) {
+	    if (score >= GameManager.instance.goal) {            
 	        winScreen.SetActive(true);
+
+            SFXManager.instance.PauseSFX(Clip.Hyperfun);
+            SFXManager.instance.StopSFX(Clip.X2Score);
+            SFXManager.instance.StopSFX(Clip.Clock);
 	        SFXManager.instance.PlaySFX(Clip.Win);
+
 	        if (score > PlayerPrefs.GetInt("HighScore")) {
 	            PlayerPrefs.SetInt("HighScore", score);
 	            highScoreWinTxt.text = "New Best: " + PlayerPrefs.GetInt("HighScore").ToString();
@@ -152,9 +158,12 @@ public class GUIManager : MonoBehaviour {
 	    }
 
 	    if (moveCounter <= 0) {
-	        GameManager.instance.gameOver = true;
-	        loseScreen.SetActive(true);
+            loseScreen.SetActive(true);
+	        GameManager.instance.gameOver = true;            	        
+
+            GameManager.instance.StopSFX();
 	        SFXManager.instance.PlaySFX(Clip.Lose);
+
 	        if (score > PlayerPrefs.GetInt("HighScore")) {
 	            PlayerPrefs.SetInt("HighScore", score);
 	            highScoreLoseTxt.text = "New Best: " + PlayerPrefs.GetInt("HighScore").ToString();
@@ -189,10 +198,12 @@ public class GUIManager : MonoBehaviour {
         if (!paused) {
             Time.timeScale = 0;
             pauseScreen.SetActive(true);
+            SFXManager.instance.PauseSFX(Clip.Hyperfun);
             paused = true;
         } else {
             Time.timeScale = 1;
             pauseScreen.SetActive(false);
+            SFXManager.instance.UnPauseSFX(Clip.Hyperfun);
             paused = false;
         }
     }
