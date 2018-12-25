@@ -201,27 +201,27 @@ Prefab:
     - target: {fileID: 114905586065593378, guid: ff47d2ce89c28fa4f9d5a46b8418d809,
         type: 2}
       propertyPath: specialTilesChances.Array.data[4]
-      value: 0
+      value: 0.9
       objectReference: {fileID: 0}
     - target: {fileID: 114905586065593378, guid: ff47d2ce89c28fa4f9d5a46b8418d809,
         type: 2}
       propertyPath: specialTilesChances.Array.data[2]
-      value: 1.6
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 114905586065593378, guid: ff47d2ce89c28fa4f9d5a46b8418d809,
         type: 2}
       propertyPath: specialTilesChances.Array.data[1]
-      value: 0
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 114905586065593378, guid: ff47d2ce89c28fa4f9d5a46b8418d809,
         type: 2}
       propertyPath: specialTilesChances.Array.data[0]
-      value: 0
+      value: 1.8
       objectReference: {fileID: 0}
     - target: {fileID: 114905586065593378, guid: ff47d2ce89c28fa4f9d5a46b8418d809,
         type: 2}
       propertyPath: specialTilesChances.Array.data[3]
-      value: 0
+      value: 1.3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff47d2ce89c28fa4f9d5a46b8418d809, type: 2}
