@@ -78,7 +78,7 @@ public class GameManager : MonoBehaviour {
         }
 
         if (CurrentSceneName == "Menu") {
-            SFXManager.instance.PlaySFX(Clip.Hyperfun);
+            if (SFXManager.instance) SFXManager.instance.PlaySFX(Clip.Hyperfun);
             ruleSheets.Clear();
             for (int i = 0; i < numberOfRuleSheets; i++) {
                 ruleSheets.Add(new GameObject());

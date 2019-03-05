@@ -544,7 +544,7 @@ Prefab:
     - target: {fileID: 114035077908073770, guid: a6b78198f77befa489cd93df553e90cc,
         type: 2}
       propertyPath: moveCounter
-      value: 35
+      value: 65
       objectReference: {fileID: 0}
     - target: {fileID: 223702928966723022, guid: a6b78198f77befa489cd93df553e90cc,
         type: 2}

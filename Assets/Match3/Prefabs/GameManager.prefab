@@ -225,12 +225,10 @@ MonoBehaviour:
   faderImg: {fileID: 114656519436538626}
   gameOver: 0
   fadeSpeed: 0.02
-  menuHighScoreTxt: {fileID: 114011653028271534, guid: 8e5b36411e6358441ab1f769093b1091,
-    type: 2}
   levelNumber: 0
   startGoal: 1500
   goal: 0
-  numberOfRuleSheets: 0
+  numberOfRuleSheets: 5
   ruleSheets:
   - {fileID: 0}
   - {fileID: 0}
